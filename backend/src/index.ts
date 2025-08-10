@@ -4,10 +4,11 @@ import { DocumentService } from './services/documentService';
 import { VectorService }  from './services/vectorService';
 import { LLMService } from './services/llmService';
 import chatRoutes from './routes/chat';
+import dotenv from 'dotenv';
 
 const app = express();
 const PORT = process.env.PORT || 5001;
-
+dotenv.config();
 // Middleware
 app.use(cors());
 app.use(express.json());

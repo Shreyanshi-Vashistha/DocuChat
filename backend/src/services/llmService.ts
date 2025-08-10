@@ -56,7 +56,7 @@ export class LLMService {
         model: this.model,
         messages,
         stream: false
-      }, { timeout: 30000 });
+      }, { timeout: 60000 });
 
       const answer = response.data.message.content;
 
@@ -85,7 +85,7 @@ export class LLMService {
 
   private async checkOllamaAvailability(): Promise<void> {
     try {
-      await axios.get(`${this.ollamaUrl}/api/tags`, { timeout: 3000 });
+      await axios.get(`${this.ollamaUrl}/api/tags`, { timeout: 60000 });
       this.isOllamaAvailable = true;
       console.log('✅ Ollama is available');
     } catch (error) {

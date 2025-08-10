@@ -1,5 +1,6 @@
 import axios from 'axios';
-
+import dotenv from 'dotenv';
+dotenv.config();
 interface StockQuote {
   symbol: string;
   price: number;
@@ -21,14 +22,18 @@ interface NewsResult {
 
 export class WebSearchService {
   private readonly stockApiKey: string;
-  private readonly newsApiKey: string;
+  //private readonly newsApiKey: string;
   private readonly searchApiKey: string;
 
   constructor() {
     // In production, these should come from environment variables
-    this.stockApiKey = process.env.FINNHUB_API_KEY || '';
-    this.newsApiKey = process.env.NEWS_API_KEY || '';
-    this.searchApiKey = process.env.BRAVE_SEARCH_API_KEY || '';
+    this.stockApiKey = process.env.ALPHA_VANTAGE_API_KEY || '';
+    console.log(this.stockApiKey)
+    //this.newsApiKey = process.env.NEWS_API_KEY || '';
+    this.searchApiKey = process.env.SERPAPI_KEY || '';
+    console.log('Alpha Key:', process.env.ALPHA_VANTAGE_API_KEY);
+console.log('SerpAPI Key:', process.env.SERPAPI_KEY);
+
   }
 
   async search(query: string): Promise<string[]> {
@@ -43,10 +48,10 @@ export class WebSearchService {
         return await this.handleStockQuery(query);
       }
       
-      // News and current events
-      if (this.isNewsQuery(query)) {
-        return await this.handleNewsQuery(query);
-      }
+      // // News and current events
+      // if (this.isNewsQuery(query)) {
+      //   return await this.handleNewsQuery(query);
+      // }
       
       // General web search
       return await this.handleGeneralSearch(query);
@@ -95,7 +100,10 @@ export class WebSearchService {
 
       // Try to get real stock data if API key is available
       if (this.stockApiKey) {
+        console.log("=====", this.stockApiKey);
+        
         const stockData = await this.fetchRealStockData(symbol);
+        console.log("-----", stockData);
         if (stockData) {
           return this.formatStockData(stockData);
         }
@@ -110,37 +118,38 @@ export class WebSearchService {
     }
   }
 
-  private async fetchRealStockData(symbol: string): Promise<StockQuote | null> {
-    try {
-      // Example using Finnhub API (replace with your preferred stock API)
-      const response = await axios.get(`https://finnhub.io/api/v1/quote`, {
-        params: {
-          symbol: symbol,
-          token: this.stockApiKey
-        },
-        timeout: 5000
-      });
+ private async fetchRealStockData(symbol: string): Promise<StockQuote | null> {
+  try {
+    const response = await axios.get('https://www.alphavantage.co/query', {
+      params: {
+        function: 'GLOBAL_QUOTE', // API function for real-time stock quote
+        symbol: symbol,
+        apikey: this.stockApiKey, // Your Alpha Vantage API key
+      },
+      timeout: 60000,
+    });
 
-      const data = response.data;
-      
-      if (data && data.c) { // c = current price
-        return {
-          symbol: symbol,
-          price: data.c,
-          change: data.d, // daily change
-          changePercent: data.dp, // daily change percent
-          volume: data.v || 0,
-          dayHigh: data.h,
-          dayLow: data.l
-        };
-      }
+    const data = response.data['Global Quote'];
 
-      return null;
-    } catch (error) {
-      console.error(`Failed to fetch real stock data for ${symbol}:`, error);
-      return null;
+    // Ensure we have the required data
+    if (data && data['05. price']) {
+      return {
+        symbol: symbol,
+        price: parseFloat(data['05. price']),
+        change: parseFloat(data['10. change']),
+        changePercent: parseFloat(data['10. change percent']),
+        volume: parseInt(data['06. volume'], 10),
+        dayHigh: parseFloat(data['03. high']),
+        dayLow: parseFloat(data['04. low']),
+      };
     }
+
+    return null; // If the data doesn't match expected structure
+  } catch (error) {
+    console.error(`Failed to fetch real stock data for ${symbol}:`, error);
+    return null;
   }
+}
 
   private generateEnhancedMockStockData(symbol: string): string[] {
     // Generate more realistic mock data based on well-known stocks
@@ -211,115 +220,114 @@ export class WebSearchService {
     return null;
   }
 
-  private async handleNewsQuery(query: string): Promise<string[]> {
-    try {
-      // If we have a news API key, fetch real news
-      if (this.newsApiKey) {
-        const newsData = await this.fetchRealNews(query);
-        if (newsData && newsData.length > 0) {
-          return this.formatNewsData(newsData);
-        }
-      }
+  // private async handleNewsQuery(query: string): Promise<string[]> {
+  //   try {
+  //     // If we have a news API key, fetch real news
+  //     if (this.newsApiKey) {
+  //       const newsData = await this.fetchRealNews(query);
+  //       if (newsData && newsData.length > 0) {
+  //         return this.formatNewsData(newsData);
+  //       }
+  //     }
 
-      // Fallback to mock news data
-      return this.generateMockNewsData(query);
+  //     // Fallback to mock news data
+  //     return this.generateMockNewsData(query);
       
-    } catch (error) {
-      console.error('News query error:', error);
-      return [`Error fetching news for your query: ${error instanceof Error ? error.message : 'Unknown error'}`];
-    }
-  }
+  //   } catch (error) {
+  //     console.error('News query error:', error);
+  //     return [`Error fetching news for your query: ${error instanceof Error ? error.message : 'Unknown error'}`];
+  //   }
+  // }
 
-  private async fetchRealNews(query: string): Promise<NewsResult[]> {
+  // private async fetchRealNews(query: string): Promise<NewsResult[]> {
+  //   try {
+  //     // Example using NewsAPI (replace with your preferred news API)
+  //     const response = await axios.get(`https://newsapi.org/v2/everything`, {
+  //       params: {
+  //         q: query,
+  //         sortBy: 'publishedAt',
+  //         pageSize: 3,
+  //         apiKey: this.newsApiKey
+  //       },
+  //       timeout: 5000
+  //     });
+
+  //     if (response.data && response.data.articles) {
+  //       return response.data.articles.map((article: any) => ({
+  //         title: article.title,
+  //         summary: article.description || article.content?.substring(0, 200) + '...',
+  //         url: article.url,
+  //         publishedAt: article.publishedAt,
+  //         source: article.source.name
+  //       }));
+  //     }
+
+  //     return [];
+  //   } catch (error) {
+  //     console.error('Failed to fetch real news:', error);
+  //     return [];
+  //   }
+  // }
+
+  // private generateMockNewsData(query: string): string[] {
+  //   return [
+  //     `Mock news results for "${query}":`,
+  //     `• Breaking: Technology sector shows mixed results amid market volatility (MockNews - 2 hours ago)`,
+  //     `• Market Analysis: Experts weigh in on current economic trends (Financial Mock - 4 hours ago)`,
+  //     `• Industry Update: Latest developments in the business world (Mock Business Today - 6 hours ago)`,
+  //     `Note: This is mock news data for demonstration. In production, integrate with real news APIs like NewsAPI, Guardian API, or Reuters API.`
+  //   ];
+  // }
+
+  // private formatNewsData(news: NewsResult[]): string[] {
+  //   const formatted = [`Recent news results:`];
+    
+  //   news.forEach((article, index) => {
+  //     const publishedDate = new Date(article.publishedAt).toLocaleString();
+  //     formatted.push(`${index + 1}. ${article.title}`);
+  //     formatted.push(`   ${article.summary}`);
+  //     formatted.push(`   Source: ${article.source} - ${publishedDate}`);
+  //     formatted.push('');
+  //   });
+
+  //   return formatted;
+  // }
+
+private async handleGeneralSearch(query: string): Promise<string[]> {
+  // Placeholder for general web search
+  // In production, integrate with Brave Search API, SerpAPI, or custom scraping
+  
+  if (this.searchApiKey) {
+    // Use SerpAPI for web search
     try {
-      // Example using NewsAPI (replace with your preferred news API)
-      const response = await axios.get(`https://newsapi.org/v2/everything`, {
+      const response = await axios.get('https://serpapi.com/search', {
         params: {
-          q: query,
-          sortBy: 'publishedAt',
-          pageSize: 3,
-          apiKey: this.newsApiKey
+          q: query, // The search query
+          api_key: this.searchApiKey, // Your SerpAPI key
+          engine: 'google', // You can use different engines like google, bing, etc.
         },
-        timeout: 5000
+        timeout: 5000, // 5 seconds timeout
       });
 
-      if (response.data && response.data.articles) {
-        return response.data.articles.map((article: any) => ({
-          title: article.title,
-          summary: article.description || article.content?.substring(0, 200) + '...',
-          url: article.url,
-          publishedAt: article.publishedAt,
-          source: article.source.name
-        }));
+      // Ensure we have results
+      if (response.data && response.data.organic_results) {
+        return this.formatGeneralSearchResults(response.data.organic_results);
       }
-
-      return [];
     } catch (error) {
-      console.error('Failed to fetch real news:', error);
-      return [];
+      console.error('SerpAPI error:', error);
     }
   }
 
-  private generateMockNewsData(query: string): string[] {
-    return [
-      `Mock news results for "${query}":`,
-      `• Breaking: Technology sector shows mixed results amid market volatility (MockNews - 2 hours ago)`,
-      `• Market Analysis: Experts weigh in on current economic trends (Financial Mock - 4 hours ago)`,
-      `• Industry Update: Latest developments in the business world (Mock Business Today - 6 hours ago)`,
-      `Note: This is mock news data for demonstration. In production, integrate with real news APIs like NewsAPI, Guardian API, or Reuters API.`
-    ];
-  }
+  // If SerpAPI fails or no results, fallback to mock data
+  return [
+    `Web search results for "${query}":`,
+    `• Comprehensive information about ${query} - Detailed explanation and current insights from authoritative sources.`,
+    `• Latest updates on ${query} - Recent developments and expert analysis from industry leaders.`,
+    `• ${query}: Complete guide and best practices - In-depth coverage of key concepts and practical applications.`,
+    `Note: This is mock web search data for demonstration. In production, integrate with search APIs like SerpAPI or implement custom web scraping.`
+  ];
+}
 
-  private formatNewsData(news: NewsResult[]): string[] {
-    const formatted = [`Recent news results:`];
-    
-    news.forEach((article, index) => {
-      const publishedDate = new Date(article.publishedAt).toLocaleString();
-      formatted.push(`${index + 1}. ${article.title}`);
-      formatted.push(`   ${article.summary}`);
-      formatted.push(`   Source: ${article.source} - ${publishedDate}`);
-      formatted.push('');
-    });
-
-    return formatted;
-  }
-
-  private async handleGeneralSearch(query: string): Promise<string[]> {
-    // Placeholder for general web search
-    // In production, integrate with Brave Search API, SerpAPI, or custom scraping
-    
-    if (this.searchApiKey) {
-      // Example implementation with Brave Search API
-      try {
-        const response = await axios.get('https://api.search.brave.com/res/v1/web/search', {
-          headers: {
-            'X-Subscription-Token': this.searchApiKey,
-            'Accept': 'application/json'
-          },
-          params: {
-            q: query,
-            count: 3
-          },
-          timeout: 5000
-        });
-
-        if (response.data && response.data.web && response.data.web.results) {
-          return this.formatGeneralSearchResults(response.data.web.results);
-        }
-      } catch (error) {
-        console.error('Brave search API error:', error);
-      }
-    }
-
-    // Enhanced mock search results
-    return [
-      `Web search results for "${query}":`,
-      `• Comprehensive information about ${query} - Detailed explanation and current insights from authoritative sources.`,
-      `• Latest updates on ${query} - Recent developments and expert analysis from industry leaders.`,
-      `• ${query}: Complete guide and best practices - In-depth coverage of key concepts and practical applications.`,
-      `Note: This is mock web search data for demonstration. In production, integrate with search APIs like Brave Search, SerpAPI, or implement custom web scraping.`
-    ];
-  }
 
   private formatGeneralSearchResults(results: any[]): string[] {
     const formatted = [`Web search results:`];
