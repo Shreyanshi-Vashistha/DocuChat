@@ -56,7 +56,9 @@ export class LLMService {
         model: this.model,
         messages,
         stream: false
-      }, { timeout: 60000 });
+      }, 
+      // { timeout: 80000 }
+    );
 
       const answer = response.data.message.content;
 

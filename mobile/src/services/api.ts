@@ -41,8 +41,8 @@ interface StockData {
 }
 
 // Configuration
-const API_BASE_URL = 'http://localhost:5001/api'; // Change this to your server IP for device testing
-const REQUEST_TIMEOUT = 30000; // 30 seconds
+const API_BASE_URL = 'http://localhost:5001/api'; 
+const REQUEST_TIMEOUT = 60000; 
 
 class ApiError extends Error {
   constructor(message: string, public statusCode?: number) {

@@ -92,14 +92,9 @@ function shouldTryWebSearch(response: string, question: string): boolean {
   return hasInsufficientResponse || response.length < 50 || isStockQuery || isCurrentEventQuery;
 }
 
-// Generate conversation title from first message
+
 function generateConversationTitle(firstMessage: string): string {
-  // Remove common question words and extract key topics
   const cleanMessage = firstMessage
-    .replace(/^(what|how|when|where|why|can|could|would|should|is|are|do|does|tell me about|explain)/i, '')
-    .trim();
-  
-  // Take first 6 words or 50 characters, whichever is shorter
   const words = cleanMessage.split(' ').slice(0, 6);
   let title = words.join(' ');
   
@@ -107,7 +102,6 @@ function generateConversationTitle(firstMessage: string): string {
     title = title.substring(0, 47) + '...';
   }
   
-  // Capitalize first letter
   return title.charAt(0).toUpperCase() + title.slice(1) || 'New Conversation';
 }
 

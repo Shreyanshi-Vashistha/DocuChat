@@ -4,6 +4,7 @@ import ChatHistory from './components/ChatHistory';
 import { Conversation, Message } from './types';
 import { chatApi } from './services/api';
 import './styles/global.css';
+//import './styles/enhanced.css';
 
 const App: React.FC = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -18,28 +19,19 @@ const App: React.FC = () => {
     maintainHistory: true
   });
 
-  // Auto-refresh conversations every 30 seconds
+  // Load conversations and check connection on mount
   useEffect(() => {
     checkConnection();
     loadConversations();
-    
-    const interval = setInterval(() => {
-      if (connectionStatus === 'connected') {
-        loadConversations();
-      }
-    }, 30000);
-    
-    return () => clearInterval(interval);
-  }, [connectionStatus]);
+  }, []);
 
   const checkConnection = async () => {
     try {
       await chatApi.healthCheck();
       setConnectionStatus('connected');
-      setError(''); // Clear any connection errors
     } catch (error) {
       setConnectionStatus('disconnected');
-      setError('Unable to connect to the server. Please check if the backend is running on port 5001.');
+      setError('Unable to connect to the server. Please check if the backend is running.');
     }
   };
 
@@ -47,9 +39,10 @@ const App: React.FC = () => {
     try {
       const response = await chatApi.getConversations();
       setConversations(response.conversations);
-      console.log(`📋 Loaded ${response.conversations.length} conversations`);
+      console.log(`Loaded ${response.conversations.length} conversations`);
     } catch (error) {
       console.error('Failed to load conversations:', error);
+      // Don't show error for conversations loading failure if we're already showing connection error
       if (connectionStatus === 'connected') {
         setError('Failed to load conversation history');
       }
@@ -60,20 +53,18 @@ const App: React.FC = () => {
     setCurrentConversationId('');
     setMessages([]);
     setError('');
-    console.log('🆕 Started new conversation');
+    console.log('Started new conversation');
   };
 
   const loadConversation = async (conversationId: string) => {
     try {
       setIsLoading(true);
-      setError('');
-      
       const response = await chatApi.getConversationHistory(conversationId);
       setCurrentConversationId(conversationId);
       setMessages(response.messages);
       setShowHistory(false);
-      
-      console.log(`📖 Loaded conversation ${conversationId} with ${response.messages.length} messages`);
+      setError('');
+      console.log(`Loaded conversation ${conversationId} with ${response.messages.length} messages`);
     } catch (error) {
       console.error('Failed to load conversation:', error);
       setError('Failed to load conversation history');
@@ -85,6 +76,7 @@ const App: React.FC = () => {
   const sendMessage = async (message: string) => {
     if (!message.trim()) return;
 
+    // Check connection before sending
     if (connectionStatus === 'disconnected') {
       setError('Cannot send message: Not connected to server');
       return;
@@ -102,7 +94,7 @@ const App: React.FC = () => {
     setMessages(prev => [...prev, userMessage]);
 
     try {
-      console.log(`📤 Sending: "${message}"`);
+      console.log(`Sending message: "${message}" to conversation: ${currentConversationId || 'new'}`);
       
       const response = await chatApi.sendMessage({
         message,
@@ -111,9 +103,9 @@ const App: React.FC = () => {
         maintainHistory: settings.maintainHistory
       });
 
-      console.log('📨 Response received:', {
+      console.log('Received response:', {
         conversationId: response.conversationId,
-        sourcesCount: response.sources.length,
+        sources: response.sources,
         usedWebSearch: response.usedWebSearch
       });
 
@@ -132,9 +124,9 @@ const App: React.FC = () => {
       await loadConversations();
       
     } catch (error) {
-      console.error('❌ Failed to send message:', error);
+      console.error('Failed to send message:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
-      setError(`Message failed: ${errorMessage}`);
+      setError(errorMessage);
       
       // Remove the user message if the request failed
       setMessages(prev => prev.slice(0, -1));
@@ -149,16 +141,14 @@ const App: React.FC = () => {
       return;
     }
 
-    if (window.confirm('Are you sure you want to clear this conversation? This cannot be undone.')) {
-      try {
-        console.log(`🗑️ Clearing conversation: ${currentConversationId}`);
-        await chatApi.clearConversationHistory(currentConversationId);
-        startNewConversation();
-        await loadConversations();
-      } catch (error) {
-        console.error('Failed to clear conversation:', error);
-        setError('Failed to clear conversation');
-      }
+    try {
+      console.log(`Clearing conversation: ${currentConversationId}`);
+      await chatApi.clearConversationHistory(currentConversationId);
+      startNewConversation();
+      await loadConversations();
+    } catch (error) {
+      console.error('Failed to clear conversation:', error);
+      setError('Failed to clear conversation');
     }
   };
 
@@ -185,7 +175,7 @@ const App: React.FC = () => {
             </span>
             {connectionStatus === 'disconnected' && (
               <button className="btn-secondary" onClick={retryConnection}>
-                Retry Connection
+                Retry
               </button>
             )}
           </div>
@@ -196,7 +186,7 @@ const App: React.FC = () => {
               onClick={() => setShowHistory(!showHistory)}
               disabled={connectionStatus === 'disconnected'}
             >
-              {showHistory ? '📖 Hide History' : '📋 Show History'}
+              {showHistory ? 'Hide History' : 'Show History'}
             </button>
             
             <button 
@@ -204,7 +194,7 @@ const App: React.FC = () => {
               onClick={startNewConversation}
               disabled={connectionStatus === 'disconnected'}
             >
-              ✨ New Chat
+              New Chat
             </button>
           </div>
         </div>
@@ -220,7 +210,7 @@ const App: React.FC = () => {
               }))}
               disabled={connectionStatus === 'disconnected'}
             />
-            <span>🌐 Enable web search fallback</span>
+            <span>Enable web search fallback</span>
           </label>
           
           <label className="setting-item">
@@ -233,15 +223,8 @@ const App: React.FC = () => {
               }))}
               disabled={connectionStatus === 'disconnected'}
             />
-            <span>🧠 Maintain conversation context</span>
+            <span>Maintain conversation context</span>
           </label>
-          
-          <div className="stats-display">
-            <span>📊 {conversations.length} conversations</span>
-            {currentConversationId && (
-              <span>💬 {Math.floor(messages.length / 2)} exchanges</span>
-            )}
-          </div>
         </div>
       </header>
 
@@ -253,7 +236,6 @@ const App: React.FC = () => {
               currentConversationId={currentConversationId}
               onConversationSelect={loadConversation}
               onNewConversation={startNewConversation}
-              // isLoading={isLoading}
             />
           </div>
         )}
@@ -261,7 +243,7 @@ const App: React.FC = () => {
         <div className={`chat-container ${showHistory ? 'with-sidebar' : ''}`}>
           {error && (
             <div className="error-banner">
-              <span>⚠️ {error}</span>
+              <span>{error}</span>
               <button onClick={() => setError('')}>×</button>
             </div>
           )}
@@ -280,18 +262,21 @@ const App: React.FC = () => {
       <footer className="app-footer">
         <div className="footer-content">
           <div className="footer-info">
-            <span>DocuChat - AI Document Assistant</span>
-            {settings.useWebSearch && <span>• 🌐 Web Search</span>}
-            {settings.maintainHistory && <span>• 🧠 Context Memory</span>}
+            <span>DocuChat - Document-based AI Assistant</span>
+            {settings.useWebSearch && <span>• Web Search Enabled</span>}
+            {settings.maintainHistory && <span>• Context Memory Enabled</span>}
           </div>
           
           <div className="footer-status">
             <span>Status: {
-              isLoading ? '⏳ Processing...' : 
-              connectionStatus === 'connected' ? '✅ Ready' : 
-              connectionStatus === 'checking' ? '🔄 Connecting...' : 
-              '❌ Disconnected'
+              isLoading ? 'Processing...' : 
+              connectionStatus === 'connected' ? 'Ready' : 
+              connectionStatus === 'checking' ? 'Connecting...' : 
+              'Disconnected'
             }</span>
+            {currentConversationId && (
+              <span>• Conversation: {currentConversationId.substring(0, 8)}...</span>
+            )}
           </div>
         </div>
       </footer>

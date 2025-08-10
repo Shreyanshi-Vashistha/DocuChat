@@ -15,12 +15,20 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 45000, // Increased timeout for web search operations
+  timeout: 120000,
 });
 
 // Request interceptor for logging and request enhancement
 apiClient.interceptors.request.use(
   (config) => {
+    if (config.url?.includes('/chat')) {
+      config.timeout = 120000; 
+    } else if (config.url?.includes('/stock')) {
+      config.timeout = 10000; 
+    } else {
+      config.timeout = 30000; 
+    }
+    
     console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, config.data);
     return config;
   },

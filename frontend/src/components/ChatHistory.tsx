@@ -36,10 +36,15 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
     }
   };
 
-  const truncateTitle = (title: string, maxLength: number = 45) => {
-    if (title.length <= maxLength) return title;
-    return title.substring(0, maxLength).trim() + '...';
-  };
+  console.log("====", conversations);
+  
+const truncateTitle = (title: string, maxLength: number = 45) => {
+  if (title.length <= maxLength) return title;
+  const truncated = title.substring(0, maxLength).trim();
+
+  return truncated.length < title.length ? `${truncated}...` : truncated;
+};
+
 
   const groupConversationsByDate = (conversations: Conversation[]) => {
     const now = new Date();
