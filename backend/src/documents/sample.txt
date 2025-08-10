@@ -1,0 +1,131 @@
+# Sample Document (src/documents/sample.txt)
+
+Company Policy Manual - DocuChat Inc.
+
+EMPLOYEE HANDBOOK
+
+Welcome to DocuChat Inc.! This handbook contains important information about our company policies, procedures, and benefits.
+
+1. COMPANY OVERVIEW
+
+DocuChat Inc. is a technology company specializing in AI-powered document processing and chatbot solutions. Founded in 2023, we are committed to innovation, excellence, and providing outstanding service to our clients.
+
+Our mission is to make document-based information easily accessible and searchable through intelligent conversational interfaces.
+
+2. WORKING HOURS AND TIME OFF
+
+Standard working hours are Monday through Friday, 9:00 AM to 5:00 PM. We offer flexible working arrangements including remote work options.
+
+Vacation Policy:
+- New employees receive 15 days of paid vacation per year
+- After 3 years of employment: 20 days per year  
+- After 5 years of employment: 25 days per year
+- Vacation days must be requested at least 2 weeks in advance
+
+Sick Leave:
+- All employees receive 10 days of paid sick leave per year
+- Sick leave can be used for personal illness or caring for family members
+- No advance notice required for sick leave, but please notify your supervisor as soon as possible
+
+3. BENEFITS PACKAGE
+
+Health Insurance:
+- Company covers 80% of health insurance premiums for employees
+- Coverage includes medical, dental, and vision
+- Family coverage is available with employee contribution
+
+Retirement Benefits:
+- 401(k) plan with company matching up to 4% of salary
+- Immediate vesting for employee contributions
+- Company match vests after 2 years of employment
+
+Professional Development:
+- Annual budget of $2,000 per employee for training and conferences
+- Tuition reimbursement up to $5,000 per year for job-related courses
+- Internal mentorship program available
+
+4. CODE OF CONDUCT
+
+All employees must maintain the highest standards of professional and ethical behavior. This includes:
+
+- Treating all colleagues, clients, and partners with respect and dignity
+- Maintaining confidentiality of proprietary company information
+- Avoiding conflicts of interest
+- Reporting any suspected violations of company policy or law
+
+Harassment and discrimination of any kind will not be tolerated and may result in immediate termination.
+
+5. REMOTE WORK POLICY
+
+DocuChat Inc. supports flexible working arrangements. Employees may work remotely up to 3 days per week with supervisor approval.
+
+Remote work requirements:
+- Reliable internet connection and suitable workspace
+- Attendance at required meetings and collaborative sessions
+- Maintaining regular communication with team members
+- Meeting all productivity and deadline requirements
+
+6. PERFORMANCE REVIEWS
+
+Performance evaluations are conducted annually in January. Reviews assess:
+- Job performance and goal achievement
+- Professional development progress
+- Areas for improvement and growth opportunities
+- Salary and promotion considerations
+
+Mid-year check-ins are conducted in July to provide ongoing feedback and support.
+
+7. TECHNOLOGY AND SECURITY
+
+All employees are provided with necessary technology equipment including laptop, monitor, and software licenses.
+
+Security Requirements:
+- Use of company-approved password manager
+- Two-factor authentication on all business accounts
+- Regular software updates and security patches
+- Immediate reporting of security incidents or breaches
+
+Personal use of company equipment is permitted for reasonable personal activities during break times.
+
+8. EXPENSE REIMBURSEMENT
+
+Employees will be reimbursed for legitimate business expenses including:
+- Travel and accommodation for business trips
+- Client entertainment (within reasonable limits)
+- Professional development activities
+- Office supplies and equipment
+
+All expenses must be submitted with receipts within 30 days. Approval required for expenses over $500.
+
+9. COMMUNICATION POLICIES
+
+Primary communication channels:
+- Email for formal communications and documentation
+- Slack for instant messaging and team collaboration
+- Video conferencing for meetings and presentations
+- Project management tools for task tracking
+
+Response time expectations:
+- Email: Within 24 hours during business days
+- Slack: Within 4 hours during business hours
+- Urgent matters: Phone or text message
+
+10. TERMINATION PROCEDURES
+
+Employment termination may occur due to:
+- Voluntary resignation (2 weeks notice required)
+- Performance issues (following progressive discipline)
+- Violation of company policies
+- Business restructuring or layoffs
+
+Final pay will include all earned wages, accrued vacation time, and applicable benefits through the last day of employment.
+
+Exit interviews are conducted to gather feedback and ensure smooth transition of responsibilities.
+
+CONTACT INFORMATION
+
+Human Resources: hr@docuchat.com | (555) 123-4567
+IT Support: it@docuchat.com | (555) 123-4568  
+General Questions: info@docuchat.com | (555) 123-4569
+
+This handbook is effective as of January 1, 2024, and supersedes all previous versions. Policies may be updated periodically with appropriate notice to employees.
