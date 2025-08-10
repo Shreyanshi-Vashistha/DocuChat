@@ -18,14 +18,38 @@ interface ChatResponse {
   usedWebSearch?: boolean;
 }
 
+interface StoredMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  sources?: string[];
+  usedWebSearch?: boolean;
+}
+
 // Store conversation histories (in production, use a proper database)
-const conversations: Map<string, any[]> = new Map();
+const conversations: Map<string, StoredMessage[]> = new Map();
 const webSearchService = new WebSearchService();
 
 // Generate conversation ID
 function generateConversationId(): string {
   return 'conv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 }
+
+function shouldTryWebSearch(response: string): boolean {
+  const indicators = [
+    "don't have enough information",
+    "couldn't find",
+    "not mentioned",
+    "no information",
+    "unable to find",
+    "not available in the context"
+  ];
+
+  const responseLower = response.toLowerCase();
+  return indicators.some(indicator => responseLower.includes(indicator)) || 
+         response.length < 50;
+}
+
 
 // Main chat endpoint
 router.post('/', async (req: Request, res: Response) => {
@@ -43,59 +67,79 @@ router.post('/', async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`Processing message: ${message}`);
+    console.log(`Processing message: "${message}" for conversation: ${conversationId}`);
 
     // Step 1: Search for relevant document chunks
-    const similarChunks = await req.vectorService.similaritySearch(message, 3);
-    const contextChunks = similarChunks.map(result => result.chunk.content);
+    const similarChunks = await req.vectorService.similaritySearch(message, 5);
+    console.log(`Found ${similarChunks.length} relevant chunks with scores:`, 
+      similarChunks.map((r: { score: number; chunk: { content: string; }; }) => ({ score: r.score.toFixed(3), preview: r.chunk.content.substring(0, 100) + '...' }))
+    );
+
+    // Filter chunks with reasonable similarity scores
+    const relevantChunks = similarChunks.filter((result: { score: number; }) => result.score > 0.1);
     
-    console.log(`Found ${similarChunks.length} relevant chunks`);
+    const contextWithMetadata = relevantChunks.map((result: { chunk: { content: any; metadata: { source: string; chunkIndex: number; }; }; }) => ({
+      content: result.chunk.content,
+      source: `${result.chunk.metadata.source.split('/').pop()} (Section ${result.chunk.metadata.chunkIndex + 1})`,
+      chunkIndex: result.chunk.metadata.chunkIndex
+    }));
 
     let response: string;
     let sources: string[] = [];
     let usedWebSearch = false;
 
     // Step 2: Generate response using LLM
-    if (contextChunks.length > 0) {
+    if (contextWithMetadata.length > 0) {
+      console.log(`Using ${contextWithMetadata.length} relevant chunks for context`);
+      
       const llmResponse = await req.llmService.generateResponse(
         message,
-        contextChunks,
+        contextWithMetadata,
         maintainHistory
       );
       response = llmResponse.answer;
       sources = llmResponse.sources;
 
       // Step 3: If no good answer and web search is enabled, try web search
-      if (useWebSearch && (
-        response.toLowerCase().includes("don't have enough information") ||
-        response.toLowerCase().includes("couldn't find") ||
-        response.length < 50
-      )) {
-        console.log('Attempting web search...');
+      if (useWebSearch && shouldTryWebSearch(response)) {
+        console.log('LLM response seems insufficient, attempting web search...');
         const webResults = await webSearchService.search(message);
         
         if (webResults.length > 0) {
+          const webContext = webResults.map((result, index) => ({
+            content: result,
+            source: `Web Search Result ${index + 1}`,
+            chunkIndex: index
+          }));
+          
           const webResponse = await req.llmService.generateResponse(
-            message,
-            webResults,
+            `${message} (Note: Use web search results to supplement or replace the previous answer if it's more accurate)`,
+            webContext,
             false // Don't maintain history for web search responses
           );
-          response = `Based on web search: ${webResponse.answer}`;
+          response = `${webResponse.answer}`;
           sources = [...sources, ...webResponse.sources];
           usedWebSearch = true;
         }
       }
     } else {
-      response = "I couldn't find relevant information in the loaded document to answer your question.";
+      console.log('No relevant document chunks found');
+      response = "I couldn't find relevant information in the loaded documents to answer your question. The search didn't return any matching content from the company policy document.";
       
       if (useWebSearch) {
         console.log('No document matches, attempting web search...');
         const webResults = await webSearchService.search(message);
         
         if (webResults.length > 0) {
+          const webContext = webResults.map((result, index) => ({
+            content: result,
+            source: `Web Search Result ${index + 1}`,
+            chunkIndex: index
+          }));
+          
           const webResponse = await req.llmService.generateResponse(
             message,
-            webResults,
+            webContext,
             false
           );
           response = `Based on web search: ${webResponse.answer}`;
@@ -108,27 +152,35 @@ router.post('/', async (req: Request, res: Response) => {
     // Store conversation history
     if (!conversations.has(conversationId)) {
       conversations.set(conversationId, []);
+      console.log(`Created new conversation: ${conversationId}`);
     }
     
     const conversation = conversations.get(conversationId)!;
+    const timestamp = new Date().toISOString();
+    
+    // Add user message
     conversation.push({
       role: 'user',
       content: message,
-      timestamp: new Date().toISOString()
+      timestamp
     });
+    
+    // Add assistant message
     conversation.push({
       role: 'assistant',
       content: response,
+      timestamp,
       sources,
-      timestamp: new Date().toISOString(),
       usedWebSearch
     });
+
+    console.log(`Conversation ${conversationId} now has ${conversation.length} messages`);
 
     const chatResponse: ChatResponse = {
       response,
       sources,
       conversationId,
-      timestamp: new Date().toISOString(),
+      timestamp,
       usedWebSearch
     };
 
@@ -143,38 +195,100 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
+
 // Get conversation history
 router.get('/history/:conversationId', (req: Request, res: Response) => {
-  const { conversationId } = req.params;
-  const history = conversations.get(conversationId) || [];
-  
-  res.json({
-    conversationId,
-    messages: history
-  });
+  try {
+    const { conversationId } = req.params;
+    const history = conversations.get(conversationId) || [];
+    
+    console.log(`Retrieving history for conversation ${conversationId}: ${history.length} messages`);
+    
+    res.json({
+      conversationId,
+      messages: history
+    });
+  } catch (error) {
+    console.error('Error retrieving conversation history:', error);
+    res.status(500).json({
+      error: 'Failed to retrieve conversation history',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
 });
 
 // Clear conversation history
 router.delete('/history/:conversationId', (req: Request, res: Response) => {
-  const { conversationId } = req.params;
-  conversations.delete(conversationId);
-  req.llmService.clearHistory();
-  
-  res.json({
-    success: true,
-    message: 'Conversation history cleared'
-  });
+  try {
+    const { conversationId } = req.params;
+    const existed = conversations.has(conversationId);
+    
+    conversations.delete(conversationId);
+    req.llmService.clearHistory();
+    
+    console.log(`Cleared conversation ${conversationId} (existed: ${existed})`);
+    
+    res.json({
+      success: true,
+      message: 'Conversation history cleared'
+    });
+  } catch (error) {
+    console.error('Error clearing conversation history:', error);
+    res.status(500).json({
+      error: 'Failed to clear conversation history',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
 });
 
 // Get all conversations
 router.get('/conversations', (req: Request, res: Response) => {
-  const conversationList = Array.from(conversations.keys()).map(id => ({
-    id,
-    messageCount: conversations.get(id)?.length || 0,
-    lastActivity: conversations.get(id)?.slice(-1)[0]?.timestamp || null
-  }));
+  try {
+    const conversationList = Array.from(conversations.keys()).map(id => {
+      const messages = conversations.get(id) || [];
+      const lastMessage = messages[messages.length - 1];
+      
+      return {
+        id,
+        messageCount: messages.length,
+        lastActivity: lastMessage ? lastMessage.timestamp : null
+      };
+    });
 
-  res.json({ conversations: conversationList });
+    // Sort by last activity (most recent first)
+    conversationList.sort((a, b) => {
+      if (!a.lastActivity && !b.lastActivity) return 0;
+      if (!a.lastActivity) return 1;
+      if (!b.lastActivity) return -1;
+      return new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime();
+    });
+
+    console.log(`Retrieved ${conversationList.length} conversations`);
+
+    res.json({ conversations: conversationList });
+  } catch (error) {
+    console.error('Error retrieving conversations list:', error);
+    res.status(500).json({
+      error: 'Failed to retrieve conversations',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Debug endpoint to see conversation details
+router.get('/debug/conversations', (req: Request, res: Response) => {
+  const debug = Array.from(conversations.entries()).map(([id, messages]) => ({
+    id,
+    messageCount: messages.length,
+    messages: messages.map(msg => ({
+      role: msg.role,
+      contentPreview: msg.content.substring(0, 100),
+      timestamp: msg.timestamp,
+      sources: msg.sources
+    }))
+  }));
+  
+  res.json({ conversations: debug });
 });
 
 // Stock data endpoint (bonus feature)

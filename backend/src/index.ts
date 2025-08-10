@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { DocumentService } from './services/documentService';
-import { VectorService } from './services/vectorService';
+import { VectorService }  from './services/vectorService';
 import { LLMService } from './services/llmService';
 import chatRoutes from './routes/chat';
 

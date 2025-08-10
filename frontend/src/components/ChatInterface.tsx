@@ -8,6 +8,7 @@ interface ChatInterfaceProps {
   onClear: () => void;
   isLoading: boolean;
   conversationId: string;
+  disabled?: boolean;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -15,7 +16,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSendMessage,
   onClear,
   isLoading,
-  conversationId
+  conversationId,
+  disabled = false
 }) => {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -29,9 +31,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     scrollToBottom();
   }, [messages]);
 
+  // Auto-resize textarea
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = inputRef.current.scrollHeight + 'px';
+    }
+  }, [input]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (input.trim() && !isLoading) {
+    if (input.trim() && !isLoading && !disabled) {
       onSendMessage(input.trim());
       setInput('');
     }
@@ -44,12 +54,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
+  const handleSuggestedQuestion = (question: string) => {
+    if (!isLoading && !disabled) {
+      onSendMessage(question);
+    }
+  };
+
   const suggestedQuestions = [
     "What are the company's vacation policies?",
     "How many sick days do employees get?",
     "What benefits does the company offer?",
     "What are the remote work requirements?",
-    "How does the performance review process work?"
+    "How does the performance review process work?",
+    "What is the expense reimbursement policy?",
+    "What are the working hours?",
+    "What technology equipment is provided?"
   ];
 
   return (
@@ -64,18 +83,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 <button
                   key={index}
                   className="suggested-question"
-                  onClick={() => !isLoading && onSendMessage(question)}
-                  disabled={isLoading}
+                  onClick={() => handleSuggestedQuestion(question)}
+                  disabled={isLoading || disabled}
                 >
                   {question}
                 </button>
               ))}
             </div>
+            {disabled && (
+              <div className="connection-warning">
+                <p>⚠️ Unable to connect to the server. Please check that the backend is running.</p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="messages-list">
             {messages.map((message, index) => (
-              <MessageBubble key={index} message={message} />
+              <MessageBubble key={`${conversationId}-${index}`} message={message} />
             ))}
             {isLoading && (
               <div className="loading-message">
@@ -100,35 +124,47 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Ask a question about the document..."
-              disabled={isLoading}
+              placeholder={disabled ? "Server disconnected..." : "Ask a question about the document..."}
+              disabled={isLoading || disabled}
               rows={1}
               className="message-input"
+              maxLength={1000}
             />
             <button 
               type="submit" 
-              disabled={!input.trim() || isLoading}
+              disabled={!input.trim() || isLoading || disabled}
               className="send-button"
+              title={disabled ? "Server disconnected" : isLoading ? "Processing..." : "Send message"}
             >
-              {isLoading ? '...' : 'Send'}
+              {isLoading ? '...' : '📤'}
             </button>
           </div>
         </form>
         
         {messages.length > 0 && (
-          <button 
-            onClick={onClear}
-            className="clear-button"
-            disabled={isLoading}
-          >
-            Clear Conversation
-          </button>
+          <div className="chat-controls">
+            <button 
+              onClick={onClear}
+              className="clear-button"
+              disabled={isLoading || disabled}
+              title="Clear conversation"
+            >
+              🗑️ Clear Conversation
+            </button>
+            
+            <div className="message-count">
+              {messages.length} message{messages.length !== 1 ? 's' : ''}
+            </div>
+          </div>
         )}
       </div>
 
       {conversationId && (
         <div className="conversation-info">
-          <small>Conversation ID: {conversationId}</small>
+          <small>
+            Conversation ID: {conversationId}
+            {disabled && ' (Disconnected)'}
+          </small>
         </div>
       )}
     </div>
