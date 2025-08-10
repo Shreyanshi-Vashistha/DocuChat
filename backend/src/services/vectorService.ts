@@ -1,4 +1,3 @@
-
 import { DocumentChunk } from './documentService';
 
 export interface SimilarityResult {
@@ -11,11 +10,13 @@ export class VectorService {
   private chunks: DocumentChunk[] = [];
   private vocabulary: Set<string> = new Set();
   private idfScores: Map<string, number> = new Map();
+  private sectionKeywords: Map<string, string[]> = new Map();
 
   async indexChunks(chunks: DocumentChunk[]): Promise<void> {
     this.chunks = chunks;
     this.buildVocabulary();
     this.calculateIDF();
+    this.buildSectionKeywords();
     
     // Create embeddings for each chunk
     for (const chunk of chunks) {
@@ -23,7 +24,9 @@ export class VectorService {
       this.embeddings.set(chunk.id, embedding);
     }
     
-    console.log(`Indexed ${chunks.length} chunks with vocabulary of ${this.vocabulary.size} words`);
+    console.log(`✅ Indexed ${chunks.length} chunks`);
+    console.log(`📊 Vocabulary: ${this.vocabulary.size} words`);
+    console.log(`🏷️ Sections: ${Array.from(this.sectionKeywords.keys()).join(', ')}`);
   }
 
   async similaritySearch(query: string, topK: number = 3): Promise<SimilarityResult[]> {
@@ -37,21 +40,26 @@ export class VectorService {
         const cosineSim = this.cosineSimilarity(queryEmbedding, chunkEmbedding);
         const keywordSim = this.calculateKeywordSimilarity(query, chunk.content);
         const semanticSim = this.calculateSemanticSimilarity(query, chunk.content);
+        const sectionSim = this.calculateSectionSimilarity(query, chunk);
         
-        // Weighted combination of similarity scores
-        const score = (cosineSim * 0.4) + (keywordSim * 0.4) + (semanticSim * 0.2);
+        // Weighted combination with emphasis on keyword and section matching
+        const score = (cosineSim * 0.25) + (keywordSim * 0.35) + (semanticSim * 0.2) + (sectionSim * 0.2);
         
         similarities.push({ chunk, score });
       }
     }
 
-    // Sort by similarity score (descending) and return top K
+    // Sort by similarity score and return top K
     const results = similarities
       .sort((a, b) => b.score - a.score)
       .slice(0, topK);
 
-    console.log(`Similarity search for "${query}": found ${results.length} results with scores:`, 
-      results.map(r => ({ score: r.score.toFixed(3), preview: r.chunk.content.substring(0, 50) + '...' }))
+    console.log(`🔍 Search for "${query}":`, 
+      results.map(r => ({ 
+        score: r.score.toFixed(3),
+        section: r.chunk.metadata.section || 'No section',
+        preview: r.chunk.content.substring(0, 60) + '...' 
+      }))
     );
 
     return results;
@@ -64,6 +72,22 @@ export class VectorService {
       const words = this.extractWords(chunk.content);
       words.forEach(word => this.vocabulary.add(word));
     }
+  }
+
+  private buildSectionKeywords(): void {
+    this.sectionKeywords.clear();
+    
+    // Define keywords for each section based on the company policy document
+    this.sectionKeywords.set('COMPANY OVERVIEW', ['company', 'docuchat', 'mission', 'technology', 'ai', 'document', 'processing', 'chatbot', 'founded', 'innovation']);
+    this.sectionKeywords.set('WORKING HOURS AND TIME OFF', ['hours', 'working', 'time', 'vacation', 'sick', 'leave', 'holiday', 'pto', 'days', 'off']);
+    this.sectionKeywords.set('BENEFITS PACKAGE', ['benefits', 'health', 'insurance', 'retirement', '401k', 'medical', 'dental', 'vision', 'development', 'training']);
+    this.sectionKeywords.set('CODE OF CONDUCT', ['conduct', 'behavior', 'ethics', 'harassment', 'discrimination', 'respect', 'professional', 'confidentiality']);
+    this.sectionKeywords.set('REMOTE WORK POLICY', ['remote', 'work', 'home', 'flexible', 'telecommute', 'virtual', 'internet', 'workspace']);
+    this.sectionKeywords.set('PERFORMANCE REVIEWS', ['performance', 'review', 'evaluation', 'annual', 'feedback', 'goals', 'development', 'salary', 'promotion']);
+    this.sectionKeywords.set('TECHNOLOGY AND SECURITY', ['technology', 'security', 'equipment', 'laptop', 'password', 'authentication', 'software', 'breach']);
+    this.sectionKeywords.set('EXPENSE REIMBURSEMENT', ['expense', 'reimbursement', 'travel', 'business', 'receipt', 'entertainment', 'approval']);
+    this.sectionKeywords.set('COMMUNICATION POLICIES', ['communication', 'email', 'slack', 'messaging', 'video', 'conferencing', 'response']);
+    this.sectionKeywords.set('TERMINATION PROCEDURES', ['termination', 'resignation', 'employment', 'notice', 'layoffs', 'exit', 'interview']);
   }
 
   private calculateIDF(): void {
@@ -97,10 +121,9 @@ export class VectorService {
       'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours',
       'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her', 'hers',
       'herself', 'it', 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves',
-      'what', 'which', 'who', 'whom', 'whose', 'this', 'that', 'these', 'those', 'am',
-      'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having',
-      'do', 'does', 'did', 'doing', 'will', 'would', 'should', 'could', 'can', 'may',
-      'might', 'must', 'shall'
+      'what', 'which', 'who', 'whom', 'whose', 'am', 'is', 'are', 'was', 'were', 'be',
+      'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing',
+      'will', 'would', 'should', 'could', 'can', 'may', 'might', 'must', 'shall'
     ]);
     
     return stopWords.has(word);
@@ -137,36 +160,40 @@ export class VectorService {
     if (queryWords.length === 0) return 0;
     
     const matches = queryWords.filter(word => textWords.includes(word));
-    const similarity = matches.length / queryWords.length;
+    let similarity = matches.length / queryWords.length;
     
     // Boost score for exact phrase matches
     const queryLower = query.toLowerCase();
     const textLower = text.toLowerCase();
     
     if (textLower.includes(queryLower)) {
-      return Math.min(1.0, similarity + 0.3);
+      similarity = Math.min(1.0, similarity + 0.4);
     }
     
     return similarity;
   }
 
   private calculateSemanticSimilarity(query: string, text: string): number {
-    // Simple semantic similarity based on related terms
     const queryWords = this.extractWords(query);
     const textWords = this.extractWords(text);
     
-    // Define some basic semantic relationships
+    // Enhanced semantic groups for company policy context
     const semanticGroups = new Map([
-      ['vacation', ['holiday', 'leave', 'time off', 'pto', 'break']],
-      ['sick', ['illness', 'medical', 'health', 'doctor', 'hospital']],
-      ['benefits', ['insurance', 'health', 'retirement', '401k', 'dental', 'vision']],
-      ['work', ['job', 'employment', 'career', 'position', 'role']],
-      ['remote', ['home', 'telecommute', 'virtual', 'distance']],
+      ['vacation', ['holiday', 'leave', 'time', 'off', 'pto', 'break', 'days']],
+      ['sick', ['illness', 'medical', 'health', 'doctor', 'hospital', 'leave']],
+      ['benefits', ['insurance', 'health', 'retirement', '401k', 'dental', 'vision', 'coverage']],
+      ['work', ['job', 'employment', 'career', 'position', 'role', 'working', 'hours']],
+      ['remote', ['home', 'telecommute', 'virtual', 'distance', 'flexible']],
       ['policy', ['rule', 'regulation', 'procedure', 'guideline', 'requirement']],
-      ['hours', ['time', 'schedule', 'shift', 'workday']],
-      ['employee', ['worker', 'staff', 'personnel', 'team member']],
-      ['company', ['organization', 'business', 'employer', 'firm']],
-      ['training', ['education', 'learning', 'development', 'course']]
+      ['hours', ['time', 'schedule', 'shift', 'workday', 'working']],
+      ['employee', ['worker', 'staff', 'personnel', 'team', 'member']],
+      ['company', ['organization', 'business', 'employer', 'firm', 'docuchat']],
+      ['training', ['education', 'learning', 'development', 'course', 'professional']],
+      ['salary', ['pay', 'wage', 'compensation', 'money', 'payment']],
+      ['review', ['evaluation', 'assessment', 'performance', 'feedback']],
+      ['insurance', ['health', 'medical', 'dental', 'vision', 'coverage']],
+      ['technology', ['equipment', 'laptop', 'computer', 'software', 'security']],
+      ['expense', ['reimbursement', 'cost', 'travel', 'business', 'receipt']]
     ]);
     
     let semanticScore = 0;
@@ -182,12 +209,33 @@ export class VectorService {
           relatedTerms.some(term => textWord.includes(term))
         );
         if (hasRelated) {
-          semanticScore += 0.5;
+          semanticScore += 0.6;
         }
       }
     });
     
     return queryWords.length > 0 ? Math.min(1.0, semanticScore / queryWords.length) : 0;
+  }
+
+  private calculateSectionSimilarity(query: string, chunk: DocumentChunk): number {
+    const queryWords = this.extractWords(query);
+    const chunkSection = chunk.metadata.section;
+    
+    if (!chunkSection) return 0;
+    
+    // Direct section name matching
+    const sectionWords = this.extractWords(chunkSection);
+    const directMatch = queryWords.filter(word => 
+      sectionWords.includes(word)
+    ).length / Math.max(queryWords.length, 1);
+    
+    // Keyword-based section matching
+    const sectionKeywords = this.sectionKeywords.get(chunkSection) || [];
+    const keywordMatch = queryWords.filter(word => 
+      sectionKeywords.includes(word)
+    ).length / Math.max(queryWords.length, 1);
+    
+    return Math.max(directMatch, keywordMatch * 0.8);
   }
 
   private cosineSimilarity(vec1: number[], vec2: number[]): number {
@@ -217,5 +265,16 @@ export class VectorService {
       .sort((a, b) => b[1] - a[1])
       .slice(0, limit)
       .map(([word]) => word);
+  }
+
+  getSectionStats(): { [section: string]: number } {
+    const stats: { [section: string]: number } = {};
+    
+    this.chunks.forEach(chunk => {
+      const section = chunk.metadata.section || 'No Section';
+      stats[section] = (stats[section] || 0) + 1;
+    });
+    
+    return stats;
   }
 }
