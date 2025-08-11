@@ -109,7 +109,7 @@ export class WebSearchService {
           symbol: symbol,
           apikey: this.stockApiKey,
         },
-        timeout: 10000,
+        timeout: 60000,
       });
 
       const data = response.data["Global Quote"];

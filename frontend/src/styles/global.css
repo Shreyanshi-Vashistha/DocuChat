@@ -273,11 +273,7 @@ body {
   width: 100%;
 }
 
-.conversation-title {
-  font-weight: 600;
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-}
+
 
 .conversation-meta {
   display: flex;

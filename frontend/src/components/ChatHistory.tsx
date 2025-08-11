@@ -160,16 +160,14 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
                         </div>
                       </div>
 
-                      {onDeleteConversation && (
-                        <button
-                          className="delete-btn"
-                          onClick={(e) => handleDeleteClick(e, conversation.id)}
-                          title="Delete conversation"
-                          aria-label="Delete conversation"
-                        >
-                          Delete
-                        </button>
-                      )}
+                      <button
+                        className="delete-btn"
+                        onClick={(e) => handleDeleteClick(e, conversation.id)}
+                        title="Delete conversation"
+                        aria-label="Delete conversation"
+                      >
+                        Delete
+                      </button>
                     </div>
                   ))}
                 </div>

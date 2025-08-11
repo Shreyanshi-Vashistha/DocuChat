@@ -341,15 +341,18 @@ router.post("/", async (req: Request, res: Response) => {
       role: "user",
       content: message,
       timestamp,
+      sources: [],
+      usedWebSearch: false,
+      contextUsed: undefined,
     });
 
     conversation.push({
       role: "assistant",
       content: response,
       timestamp,
-      sources,
-      usedWebSearch,
-      contextUsed,
+      sources: sources || [],
+      usedWebSearch: usedWebSearch || false,
+      contextUsed: contextUsed || undefined,
     });
 
     if (isFirstMessage) {

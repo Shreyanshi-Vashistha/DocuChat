@@ -18,7 +18,7 @@ const App: React.FC = () => {
     "checking" | "connected" | "disconnected"
   >("checking");
   const [settings, setSettings] = useState({
-    useWebSearch: false,
+    useWebSearch: true,
     maintainHistory: true,
   });
 
@@ -62,7 +62,15 @@ const App: React.FC = () => {
       setIsLoading(true);
       const response = await chatApi.getConversationHistory(conversationId);
       setCurrentConversationId(conversationId);
-      setMessages(response.messages);
+      const mappedMessages: Message[] = response.messages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp,
+        sources: msg.sources || [],
+        usedWebSearch: msg.usedWebSearch || false,
+        contextUsed: msg.contextUsed,
+      }));
+      setMessages(mappedMessages);
       setShowHistory(false);
       setError("");
     } catch (error) {
@@ -138,7 +146,20 @@ const App: React.FC = () => {
       setError("Failed to clear conversation");
     }
   };
-
+const deleteConversation = async (conversationId: string) => {
+    try {
+      await chatApi.clearConversationHistory(conversationId);
+      
+      if (conversationId === currentConversationId) {
+        startNewConversation();
+      }
+      
+      await loadConversations();
+    } catch (error) {
+      console.error("Failed to delete conversation:", error);
+      setError("Failed to delete conversation");
+    }
+  };
   const retryConnection = () => {
     setError("");
     setConnectionStatus("checking");
@@ -227,6 +248,7 @@ const App: React.FC = () => {
               currentConversationId={currentConversationId}
               onConversationSelect={loadConversation}
               onNewConversation={startNewConversation}
+              onDeleteConversation={deleteConversation} 
             />
           </div>
         )}
