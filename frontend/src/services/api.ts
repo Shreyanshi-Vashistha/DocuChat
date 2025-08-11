@@ -5,7 +5,6 @@ import {
   ConversationHistory, 
   ConversationsResponse,
   StockData,
-  ApiError
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
@@ -18,7 +17,7 @@ const apiClient = axios.create({
   timeout: 120000,
 });
 
-// Request interceptor for logging and request enhancement
+
 apiClient.interceptors.request.use(
   (config) => {
     if (config.url?.includes('/chat')) {
@@ -28,24 +27,22 @@ apiClient.interceptors.request.use(
     } else {
       config.timeout = 30000; 
     }
-    
-    console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, config.data);
+
     return config;
   },
   (error) => {
-    console.error('❌ API Request Error:', error);
+    console.error(' API Request Error:', error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor for enhanced error handling
+
 apiClient.interceptors.response.use(
   (response) => {
-    console.log(`✅ API Response: ${response.status} ${response.config.url}`);
     return response;
   },
   (error) => {
-    console.error('❌ API Response Error:', error.response?.data || error.message);
+    console.error('API Response Error:', error.response?.data || error.message);
     
     if (error.code === 'ECONNABORTED') {
       throw new Error('Request timeout - the server took too long to respond. This might happen with complex web searches.');
@@ -68,15 +65,13 @@ apiClient.interceptors.response.use(
 );
 
 export const chatApi = {
-  // Enhanced chat message with better error handling
+
   sendMessage: async (request: ChatRequest): Promise<ChatResponse> => {
     try {
       const response = await apiClient.post('/chat', request);
       return response.data;
     } catch (error) {
       console.error('Chat API Error:', error);
-      
-      // Provide fallback response for network errors
       if (error instanceof Error && error.message.includes('Network error')) {
         throw new Error('Unable to connect to the chat server. Please ensure the backend is running and try again.');
       }
@@ -85,7 +80,6 @@ export const chatApi = {
     }
   },
 
-  // Get conversation history with metadata
   getConversationHistory: async (conversationId: string): Promise<ConversationHistory> => {
     try {
       const response = await apiClient.get(`/chat/history/${conversationId}`);
@@ -96,7 +90,6 @@ export const chatApi = {
     }
   },
 
-  // Clear conversation history
   clearConversationHistory: async (conversationId: string): Promise<void> => {
     try {
       await apiClient.delete(`/chat/history/${conversationId}`);
@@ -106,7 +99,6 @@ export const chatApi = {
     }
   },
 
-  // Get all conversations with enhanced metadata
   getConversations: async (): Promise<ConversationsResponse> => {
     try {
       const response = await apiClient.get('/chat/conversations');
@@ -117,7 +109,6 @@ export const chatApi = {
     }
   },
 
-  // Enhanced stock data endpoint
   getStockData: async (symbol: string): Promise<StockData> => {
     try {
       const response = await apiClient.get(`/chat/stock/${symbol}`);
@@ -128,7 +119,7 @@ export const chatApi = {
     }
   },
 
-  // Health check with enhanced diagnostics
+
   healthCheck: async (): Promise<{ 
     status: string; 
     timestamp: string; 
@@ -147,7 +138,7 @@ export const chatApi = {
     }
   },
 
-  // Test web search functionality
+
   testWebSearch: async (query: string): Promise<{ results: string[]; success: boolean }> => {
     try {
       const response = await apiClient.post('/chat/test-websearch', { query });
@@ -158,7 +149,7 @@ export const chatApi = {
     }
   },
 
-  // Get conversation statistics
+
   getStats: async (): Promise<{
     totalConversations: number;
     totalMessages: number;
@@ -175,9 +166,9 @@ export const chatApi = {
   }
 };
 
-// Utility functions for API interactions
+
 export const apiUtils = {
-  // Check if the server is reachable
+
   checkConnection: async (): Promise<boolean> => {
     try {
       await chatApi.healthCheck();
@@ -187,7 +178,7 @@ export const apiUtils = {
     }
   },
 
-  // Format error messages for user display
+
   formatError: (error: unknown): string => {
     if (error instanceof Error) {
       return error.message;
@@ -195,7 +186,6 @@ export const apiUtils = {
     return 'An unknown error occurred';
   },
 
-  // Detect stock symbols in queries
   detectStockQuery: (query: string): string | null => {
     const stockPatterns = [
       /\b([A-Z]{2,5})\b.*(?:stock|price|shares?)/i,
@@ -213,7 +203,6 @@ export const apiUtils = {
     return null;
   },
 
-  // Enhanced retry logic for failed requests
   retryRequest: async <T>(
     requestFn: () => Promise<T>, 
     maxRetries: number = 3,
@@ -233,7 +222,7 @@ export const apiUtils = {
         
         console.warn(`Attempt ${attempt} failed, retrying in ${delay}ms...`, lastError.message);
         await new Promise(resolve => setTimeout(resolve, delay));
-        delay *= 1.5; // Exponential backoff
+        delay *= 1.5; 
       }
     }
     
