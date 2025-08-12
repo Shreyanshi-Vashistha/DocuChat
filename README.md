@@ -81,7 +81,7 @@ cd backend
 
    npm start
 
-The server will start on `http://localhost:5001`
+The server will start on http://localhost:5001
 
 ### 3. Frontend Setup
 
@@ -99,7 +99,7 @@ cd frontend
 3. Start the server:
    npm run dev
 
-The server will start on `http://localhost:3000`
+The server will start on http://localhost:3000
 
 ### 4. Mobile Setup
 
@@ -110,6 +110,7 @@ cd mobile
    npm install
 
 2. Start the server:
+
    npm start
 
 
