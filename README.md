@@ -22,11 +22,11 @@ A comprehensive document-based chatbot application that allows users to ask ques
 
 1. Install Ollama from [ollama.com](https://ollama.com/)
 
-   # macOS
+   ### macOS
 
    brew install ollama
 
-   # Linux
+   ### Linux
 
    curl -fsSL https://ollama.ai/install.sh | sh
 
