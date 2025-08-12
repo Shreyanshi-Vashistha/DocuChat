@@ -21,7 +21,7 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     if (config.url?.includes("/chat")) {
-      config.timeout = 120000;
+      config.timeout = 300000;
     } else if (config.url?.includes("/stock")) {
       config.timeout = 10000;
     } else {
