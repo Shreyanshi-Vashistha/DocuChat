@@ -1,4 +1,6 @@
 import axios from "axios";
+import dotenv from "dotenv";
+dotenv.config();
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -18,7 +20,7 @@ export interface ContextWithMetadata {
 }
 
 export class LLMService {
-  private ollamaUrl = "http://localhost:11434";
+  private ollamaUrl = process.env.OLLAMA_URL || "http://localhost:11434";
   private model = "llama3.2";
   private conversationHistory: ChatMessage[] = [];
   private isOllamaAvailable = false;

@@ -35,11 +35,7 @@ export class WebSearchService {
   constructor() {
     this.stockApiKey = process.env.ALPHA_VANTAGE_API_KEY || "";
     this.searchApiKey = process.env.SERPAPI_KEY || "";
-    console.log(
-      "Alpha Key:",
-      process.env.ALPHA_VANTAGE_API_KEY ? "Set" : "Not set"
-    );
-    console.log("SerpAPI Key:", process.env.SERPAPI_KEY ? "Set" : "Not set");
+    process.env.ALPHA_VANTAGE_API_KEY || ""
   }
 
   async search(query: string): Promise<string[]> {
