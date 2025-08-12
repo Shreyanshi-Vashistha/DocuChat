@@ -1,6 +1,12 @@
 import React from "react";
 import { Message } from "../types";
-import { FcGlobe, FcDocument, FcReading, FcAssistant, FcComboChart } from "react-icons/fc";
+import {
+  FcGlobe,
+  FcDocument,
+  FcReading,
+  FcAssistant,
+  FcComboChart,
+} from "react-icons/fc";
 import { FaVectorSquare } from "react-icons/fa6";
 
 interface MessageBubbleProps {
@@ -79,56 +85,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
     });
   };
 
-
-  const parseSource = (source: string) => {
-
-    if (source.includes(" - URL:") || source.includes(" - http")) {
-      const parts = source.split(" - ");
-      if (parts.length >= 3) {
-        const title = parts[0];
-        const sourceName = parts[1];
-        const url = parts.slice(2).join(" - ").replace("URL:", "").trim();
-
-        return {
-          title,
-          sourceName,
-          url: url.startsWith("http") ? url : null,
-          hasUrl: true,
-        };
-      }
-    }
-
-    const urlMatch = source.match(/(https?:\/\/[^\s]+)/);
-    if (urlMatch) {
-      const url = urlMatch[1];
-      const textWithoutUrl = source.replace(url, "").trim();
-      return {
-        title: textWithoutUrl || "Web Source",
-        sourceName: extractDomainFromUrl(url),
-        url,
-        hasUrl: true,
-      };
-    }
-
-    return {
-      title: source,
-      sourceName: null,
-      url: null,
-      hasUrl: false,
-    };
-  };
-
-  const extractDomainFromUrl = (url: string): string => {
-    try {
-      const urlObj = new URL(url);
-      return urlObj.hostname.replace("www.", "");
-    } catch (error) {
-      return "Web Source";
-    }
-  };
-
-
-
   return (
     <div
       className={`message-bubble ${message.role} ${
@@ -139,7 +95,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         <div className="message-info">
           <span className="message-role">
             {message.role === "user" ? (
-              <> <FcAssistant/> You</>
+              <>
+                {" "}
+                <FcAssistant /> You
+              </>
             ) : (
               <>
                 {getContextIcon(message.contextUsed, message.usedWebSearch)}{" "}
@@ -188,19 +147,21 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
       <div className="message-content">
         {formatMessageContent(message.content)}
 
-       {message.role === "assistant" && (
+        {message.role === "assistant" && (
           <div className="message-footer">
             {message.usedWebSearch && message.contextUsed === "both" && (
               <div className="enhanced-indicator">
                 <small>
-                   <FaVectorSquare/> Enhanced with both document knowledge and web search
+                  <FaVectorSquare /> Enhanced with both document knowledge and
+                  web search
                 </small>
               </div>
             )}
             {message.usedWebSearch && message.contextUsed === "web" && (
               <div className="web-only-indicator">
                 <small>
-                   <FcGlobe/> Based on web search (no relevant document content found)
+                  <FcGlobe /> Based on web search (no relevant document content
+                  found)
                 </small>
               </div>
             )}
@@ -208,7 +169,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
               message.sources &&
               message.sources.length > 0 && (
                 <div className="document-only-indicator">
-                  <small> <FcDocument/> Based on document content</small>
+                  <small>
+                    {" "}
+                    <FcDocument /> Based on document content
+                  </small>
                 </div>
               )}
           </div>
