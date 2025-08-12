@@ -56,13 +56,14 @@ cd backend
    Create a .env file in the backend directory:
 
    PORT=5001
+
    OLLAMA_URL=http://localhost:11434
 
-   # For real stock data
+   ### For real stock data
 
    ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key
 
-   # For web search
+   ### For web search
 
    SERPAPI_KEY=your_serpapi_key
 
@@ -72,10 +73,12 @@ cd backend
 
 4. Start the server:
 
-   Development mode (with auto-reload)
+   Development mode
+
    npm run dev
 
    Production mode
+
    npm start
 
 The server will start on `http://localhost:5001`
