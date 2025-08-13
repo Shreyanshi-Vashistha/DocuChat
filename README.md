@@ -125,7 +125,7 @@ cd mobile
 
    #### Replace with your computer's actual IP address
    
-   EXPO_PUBLIC_API_BASE_URL=http://<your-ip-address>:5001/api
+   EXPO_PUBLIC_API_BASE_URL=http://<<<your-ip-address>>>:5001/api
 
 4. Start the server:
 
