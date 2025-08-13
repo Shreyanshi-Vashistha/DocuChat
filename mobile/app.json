@@ -15,7 +15,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.docuchatmobile"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,6 +27,7 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "sdkVersion": "53.0.0"
   }
 }

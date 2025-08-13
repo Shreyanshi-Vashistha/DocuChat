@@ -1,3 +1,6 @@
+import { EXPO_PUBLIC_API_BASE_URL } from '@env';
+
+
 interface ChatRequest {
   message: string;
   conversationId?: string;
@@ -54,8 +57,8 @@ interface StockData {
   lastUpdated: string;
 }
 
-const API_BASE_URL = "http://localhost:5001/api";
-const REQUEST_TIMEOUT = 60000;
+const API_BASE_URL = EXPO_PUBLIC_API_BASE_URL;
+const REQUEST_TIMEOUT = 300000;
 
 class ApiError extends Error {
   constructor(message: string, public statusCode?: number) {
