@@ -109,7 +109,7 @@ cd mobile
 
    npm install
 
-   ### If you encounter dependency conflicts, use:
+   #### If you encounter dependency conflicts, use:
    
    npm install --legacy-peer-deps
 
@@ -123,27 +123,35 @@ cd mobile
    
    Create a .env file in the mobile directory:
 
-   ### Replace with your computer's actual IP address
+   #### Replace with your computer's actual IP address
    
    EXPO_PUBLIC_API_BASE_URL=http://192.168.1.100:5001/api
 
 4. Start the server:
 
-   ### Start with cache clearing
+   #### Start with cache clearing
 
    npx expo start --clear
 
-   ### Or regular start
+   #### Or regular start
    
    npx expo start
 
 5. Connect Your Device:
 
-   ## Use Expo Go
+   #### Use Expo Go
+   
+   1. Install Expo Go from App Store (iOS) or Play Store (Android)
+   
+   2. Scan the QR code displayed in your terminal
+   
+   3. The app will load on your device
+  
+   #### Use ios Emulator
 
    npx expo run:ios
       
-   ## Use Android Emulator
+   #### Use Android Emulator
    
    npx expo run:android
 
