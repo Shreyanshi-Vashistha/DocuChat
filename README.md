@@ -59,6 +59,8 @@ cd backend
 
    OLLAMA_URL=http://localhost:11434
 
+   API_BASE_URL=http://localhost:5001
+
    ### For real stock data
 
    ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key
@@ -67,11 +69,11 @@ cd backend
 
    SERPAPI_KEY=your_serpapi_key
 
-3. Build the project:
+4. Build the project:
 
    npm run build
 
-4. Start the server:
+5. Start the server:
 
    Development mode
 
