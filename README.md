@@ -109,8 +109,41 @@ cd mobile
 
    npm install
 
-2. Start the server:
+   ### If you encounter dependency conflicts, use:
+   
+   npm install --legacy-peer-deps
 
-   npm start
+2. Update Expo CLI (if needed)
 
+   npm uninstall -g expo-cli
+
+   npm install -g @expo/cli@latest
+   
+3. Environment Setup:
+   
+   Create a .env file in the mobile directory:
+
+   ### Replace with your computer's actual IP address
+   
+   EXPO_PUBLIC_API_BASE_URL=http://192.168.1.100:5001/api
+
+4. Start the server:
+
+   ### Start with cache clearing
+
+   npx expo start --clear
+
+   ### Or regular start
+   
+   npx expo start
+
+5. Connect Your Device:
+
+   ## Use Expo Go
+
+   npx expo run:ios
+      
+   ## Use Android Emulator
+   
+   npx expo run:android
 
